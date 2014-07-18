@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="author" content="Daniel Rauber" />
+  <title>Minimal Spanning Tree Algorithm</title>
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+}
+canvas {
+  display: block;
+  background: #eee;
+}
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+
+var canvas = document.getElementById('canvas'),
+    ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+ctx.fillStyle = '#345';
+ctx.strokeStyle = '#345';
+
+document.addEventListener('click',function(e){
+  metric.addPoint(e.pageX,e.pageY);
+});
+
+var metric = {
+  points: [],
+  edges: [],
+  addPoint: function(x,y){
+    var id = this.points.length;
+
+    // add the point
+    this.points.push({id:id,x:x,y:y});
+
+    // add the new edges
+    this.connectLastPoint(id);
+
+    // Draw  everything
+    // Draw edges
+    canvas.width = window.innerWidth; // reset the canvas
+    canvas.height = window.innerHeight; // reset the canvas
+    ctx.fillStyle = '#345';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(200,200,200,0.3)';
+    this.drawEdges(this.edges);
+
+    // calculate and draw MST
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#345';
+    this.drawEdges(mst.calculate(this.points,this.edges));
+
+    // Draw points
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#345';
+    ctx.lineWidth = 4;
+    this.drawPoints();
+  },
+  connectLastPoint: function(id){
+    for(var i=0; i<this.points.length-1; i++){
+      this.edges.push({
+        id:this.edges.length,
+        a:id,
+        b:i,
+        length:this.edgeLength(id,i)
+      });
+    }
+
+    // sort edges
+    this.edges.sort(function(a,b){
+      if(a.length < b.length){ return -1; }
+      if(a.length > b.length){ return 1; }
+      return 0;
+    });
+  },
+  edgeLength: function(a,b){
+    var x = Math.abs(this.points[a].x-this.points[b].x);
+    var y = Math.abs(this.points[a].y-this.points[b].y);
+    return Math.sqrt(Math.pow(x,2)+Math.pow(y,2));
+  },
+  drawPoints: function(){
+    var point;
+    for(var i=0; i<this.points.length; i++){
+      point = this.points[i];
+      this.drawPoint(point.x,point.y);
+    }
+  },
+  drawPoint: function(x,y){
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,2*Math.PI,false);
+    ctx.stroke();
+    ctx.fill();
+  },
+  drawEdges:function(edges){
+    var edge;
+    for(var i=0; i<edges.length; i++){
+      edge = edges[i];
+      this.drawEdge(edge);
+    }
+  },
+  drawEdge: function(edge){
+    var a = edge.a;
+    var b = edge.b;
+    ctx.beginPath();
+    ctx.moveTo(this.points[a].x,this.points[a].y);
+    ctx.lineTo(this.points[b].x,this.points[b].y);
+    ctx.stroke();
+  }
+};
+
+var mst = {
+  edges: [],
+  calculate: function(points,edges){
+    this.edges = [];
+    for(var i=0; i<points.length; i++){
+      points[i].mstClass = i;
+    }
+    for(var j=0; j<edges.length; j++){
+      var edge = edges[j];
+      var a = points[edge.a];
+      var b = points[edge.b];
+      if(a.mstClass !== b.mstClass){
+        this.edges.push(edge);
+        this.updatePoints(points,a.mstClass,b.mstClass);
+      }
+      if(this.edges.length === points.length-1){
+        // the MST is complete
+        break;
+      }
+    }
+    return this.edges;
+  },
+  updatePoints: function(points,oldClass,newClass){
+    for(var i=0; i<points.length; i++){
+      if(points[i].mstClass === oldClass){
+        points[i].mstClass = newClass;
+      }
+    }
+  }
+};
+
+  </script>
+</body>
+</html>
